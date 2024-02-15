@@ -1,3 +1,8 @@
+qgame/game/static
+qgame/game/migrations/
+quantum-checkers-ui/node_modules/
+quantum-checkers-ui/build/
+
 # Django #
 ############
 qgame/*.log
@@ -6,13 +11,14 @@ qgame/*.pyo
 qgame/__pycache__/
 qgame/db.sqlite3
 qgame/media
-qgame/static
+
 qgame/.vscode
 qgame/.idea
 qgame/*.swp
 qgame/*~
 qgame/*.bak
 qgame/.pytest_cache/
+
 
 # Python virtual environments #
 ################################
@@ -22,7 +28,7 @@ ENV/
 
 # Node #
 ########
-quantum-checkers-ui/node_modules/
+
 quantum-checkers-ui/npm-debug.log*
 quantum-checkers-ui/yarn-debug.log*
 quantum-checkers-ui/yarn-error.log*
@@ -30,7 +36,7 @@ quantum-checkers-ui/.env
 
 # Build directory #
 ###################
-quantum-checkers-ui/build/
+
 
 # Development tools #
 ######################
@@ -69,3 +75,6 @@ quantum-checkers-ui/build/
 Network Trash Folder
 Temporary Items
 .apdisk
+
+
+
