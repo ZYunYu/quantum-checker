@@ -3,6 +3,23 @@ import shutil
 import re
 
 
+def clear_directory_except(directory, exceptions):
+    """
+    Clears the directory except for the files and directories specified in exceptions.
+
+    :param directory: The directory to clear.
+    :param exceptions: A list of filenames or directory names to exclude from deletion.
+    """
+    for item in os.listdir(directory):
+        if item not in exceptions:
+            item_path = os.path.join(directory, item)
+            if os.path.isdir(item_path):
+                shutil.rmtree(item_path)
+            else:
+                os.remove(item_path)
+    print(f"Cleared directory {directory} except for {exceptions}")
+
+
 def main():
     # Adjust the base path to point to the QuantumCheckersWebApp directory
     base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -17,6 +34,9 @@ def main():
     # Ensure the target directories exist
     os.makedirs(django_static_path, exist_ok=True)
     os.makedirs(django_templates_path, exist_ok=True)
+
+    # Clear the django_static_path directory except for .gitignore and .gitkeep
+    clear_directory_except(django_static_path, ['.gitignore', '.gitkeep'])
 
     # Build the React project
     os.chdir(react_project_path)
