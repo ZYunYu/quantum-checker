@@ -1,5 +1,6 @@
-qgame/game/static
 qgame/game/migrations/
+qgame/game/__pycache__/
+qgame/qgame/__pycache__/
 quantum-checkers-ui/node_modules/
 quantum-checkers-ui/build/
 
@@ -8,7 +9,7 @@ quantum-checkers-ui/build/
 qgame/*.log
 qgame/*.pyc
 qgame/*.pyo
-qgame/__pycache__/
+
 qgame/db.sqlite3
 qgame/media
 
@@ -78,3 +79,4 @@ Temporary Items
 
 
 
+/qgame/game/static/game/*
