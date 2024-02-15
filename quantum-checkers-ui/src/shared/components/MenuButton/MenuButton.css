@@ -1,0 +1,37 @@
+.menu-button {
+    background-color: var(--color-secondary);
+    color: var(--color-text);
+    padding: 15px 30px;
+    margin: 10px 0;
+    border: 1px solid var(--color-border); /* Added border to match the design */
+    border-radius: 5px;
+    cursor: pointer;
+    text-decoration: none;
+    font-size: 16px;
+    transition: background-color 0.3s, color 0.3s, box-shadow 0.3s;
+    display: block;
+    width: 80%; /* Adjusted width to match the design */
+    max-width: 300px; /* Maximum width to prevent buttons from stretching too wide */
+    text-align: center;
+}
+
+.menu-button:hover {
+    background-color: var(--color-button-hover);
+    color: var(--color-text-secondary);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    transform: translateY(-3px); /* Added to lift the button on hover */
+}
+
+.menu-button:active {
+    background-color: var(--color-button-active);
+}
+
+.menu-button:link,
+.menu-button:visited {
+    text-decoration: none;
+}
+
+.menu-button:focus,
+.menu-button:active {
+    outline: none;
+}
