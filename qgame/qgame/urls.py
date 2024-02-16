@@ -19,15 +19,15 @@ from django.contrib import admin
 from django.template.defaulttags import url
 from django.urls import include, path
 from django.views.generic import TemplateView
-from game.views import GameLevelView
+from game.views import GameLevelView, ApplyGateView, CreateGameSessionView
 from game.views import index
 
 
 urlpatterns = [
-    # path("test/", include("game.urls")),
+    path('test/', TemplateView.as_view(template_name='game/index.html')),
     path('admin/', admin.site.urls),
     path('api/gamelevels/', GameLevelView.as_view(), name='game-levels'),
     path('api/gamelevels/<int:level_id>/', GameLevelView.as_view(), name='game-level-detail'),
-    path('test/', TemplateView.as_view(template_name='game/index.html')),
-
+    path('api/applygate/<int:session_id>/', ApplyGateView.as_view(), name='apply-gate'),
+    path('api/game-sessions/', CreateGameSessionView.as_view(), name='create-game-session'),
 ]
