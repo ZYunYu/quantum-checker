@@ -4,6 +4,7 @@ import Circle from './components/Circle';
 import './GameBoardPage.css';
 import Square from './components/BackgroundSquare';
 import {useParams} from "react-router-dom";
+import Gate from './components/Gate';
 
 interface GameLevelDetails {
     id: number;
@@ -16,10 +17,10 @@ interface GameLevelDetails {
     circle31: number | null;
     circle32: number | null;
     circle33: number | null;
-    // gate_z: boolean;
-    // gate_h: boolean;
-    // gate_x: boolean;
-    // gate_cz: boolean;
+    gate_z: boolean;
+    gate_h: boolean;
+    gate_x: boolean;
+    gate_cz: boolean;
 }
 
 interface QuantumCheckersProps {
@@ -28,7 +29,7 @@ interface QuantumCheckersProps {
 
 const GameBoard: React.FC = () => {
     const [gameData, setGameData] = useState<GameLevelDetails | null>(null);
-    const { levelId } = useParams();
+    const {levelId} = useParams();
 
     useEffect(() => {
         axios.get(`http://localhost:8000/api/gamelevels/${levelId}/`)
@@ -64,7 +65,12 @@ const GameBoard: React.FC = () => {
                     </>
                 ) : null}
             </div>
+            <Gate gateType="x" isEnabled={gameData?.gate_x ?? false} />
+            <Gate gateType="z" isEnabled={gameData?.gate_z ?? false}/>
+            <Gate gateType="h" isEnabled={gameData?.gate_h ?? false}/>
+            <Gate gateType="cz" isEnabled={gameData?.gate_cz ?? false} />
         </div>
+
     );
 };
 

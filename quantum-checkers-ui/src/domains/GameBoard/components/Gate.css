@@ -1,0 +1,51 @@
+.gate-button {
+    width: 100px;
+    height: 100px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    border: 1px solid var(--color-border);
+    background-color: var(--color-button-active);
+    cursor: pointer;
+    color: var(--color-text);
+}
+
+.gate-button.disabled {
+    background-color: var(--color-background);
+    cursor: not-allowed;
+}
+
+.gate-type {
+    font-size: 20px;
+    font-weight: bold;
+    flex-grow: 3;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.gate-label {
+    font-size: 16px;
+    flex-grow: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.gate-button:hover {
+    /* If Gate is disable, disable hover effect*/
+
+    &:not(.disabled) {
+        background-color: var(--color-button-hover);
+    }
+}
+
+.gate-button:active {
+    /* If Gate is disable, disable active effect*/
+
+    &:not(.disabled) {
+        background-color: var(--color-button-active);
+    }
+}

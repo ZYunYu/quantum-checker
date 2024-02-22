@@ -1,8 +1,10 @@
 qgame/game/migrations/
-qgame/game/__pycache__/
-qgame/qgame/__pycache__/
+
 quantum-checkers-ui/node_modules/
 quantum-checkers-ui/build/
+
+__pycache__/
+*.py[cod]
 
 # Django #
 ############
@@ -80,3 +82,5 @@ Temporary Items
 
 
 /qgame/game/static/game/*
+
+

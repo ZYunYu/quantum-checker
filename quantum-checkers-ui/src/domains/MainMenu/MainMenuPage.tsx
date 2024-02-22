@@ -8,6 +8,7 @@ const MainMenuPage: React.FC = () => (
     <div id="container">
         <h1>Main Menu</h1>
         <div className="button-container">
+            <MenuButton to="/auth">Login</MenuButton>
             <MenuButton to="/level-selection">Start Game</MenuButton>
             <MenuButton to="/about">About</MenuButton>
             <MenuButton to="/how-to-play">How to Play</MenuButton>

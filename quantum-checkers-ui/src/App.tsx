@@ -5,6 +5,8 @@ import AboutPage from './domains/MainMenu/pages/AboutPage';
 import HowToPlayPage from './domains/MainMenu/pages/HowToPlayPage';
 import {LevelSelection} from './domains/LevelSelection';
 import {GameBoard} from './domains/GameBoard';
+import {Auth} from "./domains/Auth";
+import {SignupForm} from "./domains/Auth/components";
 import './App.css';
 import './shared/styles/base.css';
 
@@ -22,6 +24,9 @@ function App() {
                     <Route path="/game/:levelId" element={<GameBoard/>}/>
                     <Route path="/about" element={<AboutPage/>}/>
                     <Route path="/how-to-play" element={<HowToPlayPage/>}/>
+                    <Route path="/auth" element={<Auth/>}/>
+                    <Route path="/signup" element={<SignupForm/>}/>
+
                 </Routes>
             </Router>
         </div>

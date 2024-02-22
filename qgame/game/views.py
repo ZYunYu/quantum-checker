@@ -6,6 +6,9 @@ from rest_framework import status
 from .models.game_session_model import GameSession
 from .models.game_level_model import GameLevel
 from .game_logic import QuantumGame
+from django.contrib.auth.models import User
+from rest_framework_simplejwt.tokens import RefreshToken
+from django.contrib.auth import authenticate
 
 
 class GameLevelView(APIView):
@@ -39,17 +42,14 @@ class ApplyGateView(APIView):
         except GameSession.DoesNotExist:
             return Response({'error': 'Game session not found'}, status=404)
 
-        # 初始化QuantumGame实例，并应用门操作
         quantum_game = QuantumGame(initialize=game_session.applied_gates)
         quantum_game.apply_gate(qubit_idx=qubit_idx, gate=gate_type)
         quantum_game.run_circuit()
 
-        # 更新GameSession实例
         game_session.applied_gates = quantum_game.applied_gates
         game_session.probabilities = quantum_game.probabilities
         game_session.save()
 
-        # 映射概率到前端元素
         front_end_data = {
             'circle11': quantum_game.probabilities.get('ZI', 0),
             'circle12': quantum_game.probabilities.get('XI', 0),
@@ -71,6 +71,32 @@ class CreateGameSessionView(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class SignUpView(APIView):
+    def post(self, request, format=None):
+        username = request.data.get('username')
+        password = request.data.get('password')
+        email = request.data.get('email', '')
+        if not username or not password:
+            return Response({"error": "Username and password are required."}, status=status.HTTP_400_BAD_REQUEST)
+        if User.objects.filter(username=username).exists():
+            return Response({"error": "Username already exists."}, status=status.HTTP_400_BAD_REQUEST)
+        user = User.objects.create_user(username=username, email=email, password=password)
+        return Response({"message": "User created successfully."}, status=status.HTTP_201_CREATED)
+
+class LoginView(APIView):
+    def post(self, request, format=None):
+        username = request.data.get('username')
+        password = request.data.get('password')
+        user = authenticate(username=username, password=password)
+        if user is not None:
+            refresh = RefreshToken.for_user(user)
+            return Response({
+                'refresh': str(refresh),
+                'access': str(refresh.access_token),
+            })
+        else:
+            return Response({"error": "Invalid credentials."}, status=status.HTTP_401_UNAUTHORIZED)
 
 
 def index(request):

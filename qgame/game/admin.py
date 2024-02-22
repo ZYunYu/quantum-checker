@@ -5,6 +5,8 @@ from .models.game_level_model import GameLevel
 from .models.game_session_model import GameSession
 
 
+
+
 @admin.register(GameLevel)
 class GameLevelAdmin(admin.ModelAdmin):
     list_display = (
@@ -28,11 +30,20 @@ class GameLevelAdmin(admin.ModelAdmin):
 @admin.register(GameSession)
 class GameSessionAdmin(admin.ModelAdmin):
     list_display = (
-        'session_id', 'game_level', 'display_current_state', 'display_applied_gates', 'display_probabilities', 'is_win')
+        'display_user', 'display_game_level', 'display_current_state',
+        'display_applied_gates', 'display_probabilities', 'is_win')
 
     formfield_overrides = {
         models.JSONField: {'widget': JSONEditorWidget},
     }
+
+    def display_user(self, obj):
+        return obj.user.username
+    display_user.short_description = 'User'
+
+    def display_game_level(self, obj):
+        return f"Level {obj.game_level.level}"
+    display_game_level.short_description = 'Game Level'
 
     def display_current_state(self, obj):
         return str(obj.current_state)
