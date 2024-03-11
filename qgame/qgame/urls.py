@@ -19,7 +19,7 @@ from django.contrib import admin
 from django.template.defaulttags import url
 from django.urls import include, path
 from django.views.generic import TemplateView
-from game.views import GameLevelView, ApplyGateView, CreateGameSessionView, SignUpView, LoginView
+from game.views import GameLevelView, login_view, logout_view, session_view, signup_view
 from game.views import index
 
 urlpatterns = [
@@ -27,8 +27,11 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/gamelevels/', GameLevelView.as_view(), name='game-levels'),
     path('api/gamelevels/<int:level_id>/', GameLevelView.as_view(), name='game-level-detail'),
-    path('api/applygate/<int:session_id>/', ApplyGateView.as_view(), name='apply-gate'),
-    path('api/game-sessions/', CreateGameSessionView.as_view(), name='create-game-session'),
-    path('api/signup/', SignUpView.as_view(), name='signup'),
-    path('api/login/', LoginView.as_view(), name='login'),
+    # path('api/applygate/<int:session_id>/', ApplyGateView.as_view(), name='apply-gate'),
+    # path('api/game-sessions/', CreateGameSessionView.as_view(), name='create-game-session'),
+    path('api/login/', login_view, name='api_login'),
+    path('api/logout/', logout_view, name='api_logout'),
+    path('api/session/', session_view, name='api_session'),
+    path('api/signup/', signup_view, name='api_signup'),
+
 ]
