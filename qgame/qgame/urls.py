@@ -21,6 +21,8 @@ from django.urls import include, path
 from django.views.generic import TemplateView
 from game.views import GameLevelView, login_view, logout_view, session_view, signup_view
 from game.views import index
+from django.contrib import admin
+
 
 urlpatterns = [
     path('test/', TemplateView.as_view(template_name='game/index.html')),
@@ -35,3 +37,5 @@ urlpatterns = [
     path('api/signup/', signup_view, name='api_signup'),
 
 ]
+
+admin.site.site_header = 'Quantum Game Admin'

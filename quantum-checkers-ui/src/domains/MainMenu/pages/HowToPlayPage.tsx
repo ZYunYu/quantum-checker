@@ -1,4 +1,5 @@
 import React from 'react';
+import './AboutPage.css';
 
 const HowToPlayPage: React.FC = () => (
   <div className="howtoplay">

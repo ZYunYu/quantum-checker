@@ -51,19 +51,21 @@ def main():
 
 
 def update_and_move_index_html(source_path, templates_path):
-    # Read the original HTML content
-    with open(source_path, 'r') as file:
-        html_content = file.read()
 
-    # Perform replacements
-    html_content = update_html_for_django_static(html_content)
+    if os.path.exists(source_path):
+        # Read the original HTML content
+        with open(source_path, 'r') as file:
+            html_content = file.read()
 
-    # Write the updated HTML to the new location
-    destination_path = os.path.join(templates_path, 'index.html')
-    with open(destination_path, 'w') as file:
-        file.write(html_content)
+        # Perform replacements
+        html_content = update_html_for_django_static(html_content)
 
-    print("index.html has been updated and moved successfully.")
+        # Write the updated HTML to the new location
+        destination_path = os.path.join(templates_path, 'index.html')
+        with open(destination_path, 'w') as file:
+            file.write(html_content)
+
+        print("index.html has been updated and moved successfully.")
 
 
 def update_html_for_django_static(html_content):
@@ -98,15 +100,17 @@ def update_html_for_django_static(html_content):
 
 def move_static_files(react_project_path, static_path):
     build_path = os.path.join(react_project_path, 'build')
-    for item in os.listdir(build_path):
-        source = os.path.join(build_path, item)
-        destination = os.path.join(static_path, item)
-        if os.path.isdir(source):
-            shutil.copytree(source, destination, dirs_exist_ok=True)
-        else:
-            if item != 'index.html':  # Skip index.html since it's already been moved
-                shutil.copy2(source, destination)
-    print("Static files have been moved successfully.")
+
+    if os.path.exists(build_path):
+        for item in os.listdir(build_path):
+            source = os.path.join(build_path, item)
+            destination = os.path.join(static_path, item)
+            if os.path.isdir(source):
+                shutil.copytree(source, destination, dirs_exist_ok=True)
+            else:
+                if item != 'index.html':  # Skip index.html since it's already been moved
+                    shutil.copy2(source, destination)
+        print("Static files have been moved successfully.")
 
 
 if __name__ == "__main__":

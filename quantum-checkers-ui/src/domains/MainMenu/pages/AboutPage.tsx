@@ -1,4 +1,5 @@
 import React from 'react';
+import './AboutPage.css';
 
 const AboutPage: React.FC = () => (
   <div className="about">
