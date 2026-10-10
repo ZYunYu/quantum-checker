@@ -1,10 +1,64 @@
 from django import forms
 from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin
+from django.contrib.auth.models import User
 
 from .game_logic import CIRCLE_PAULIS, validate_gates
 from .models.game_level_model import GameLevel
 from .models.game_session_model import GameSession
-from .models.user_model import UserGameLevel
+from .models.user_model import UserGameLevel, Classroom, UserProfile
+
+
+@admin.register(Classroom)
+class ClassroomAdmin(admin.ModelAdmin):
+    search_fields = ('name',)
+
+
+class StudentProfileInline(admin.StackedInline):
+    model = UserProfile
+    can_delete = False
+    max_num = 1
+    extra = 0
+
+
+admin.site.unregister(User)
+
+
+@admin.register(User)
+class StudentUserAdmin(UserAdmin):
+    inlines = (StudentProfileInline,)
+    list_display = UserAdmin.list_display + ('student_id', 'classroom')
+    list_filter = UserAdmin.list_filter + ('student_profile__classroom',)
+    search_fields = UserAdmin.search_fields + ('student_profile__student_id',)
+    list_select_related = ('student_profile', 'student_profile__classroom')
+
+    def get_inline_instances(self, request, obj=None):
+        return super().get_inline_instances(request, obj) if obj else []
+
+    @admin.display(description='学号')
+    def student_id(self, obj):
+        profile = getattr(obj, 'student_profile', None)
+        return profile.student_id if profile else None
+
+    @admin.display(description='班级')
+    def classroom(self, obj):
+        profile = getattr(obj, 'student_profile', None)
+        return profile.classroom if profile else None
+
+
+@admin.register(UserProfile)
+class UserProfileAdmin(admin.ModelAdmin):
+    list_display = ('user', 'student_id', 'classroom')
+    list_filter = ('classroom',)
+    search_fields = ('student_id', 'user__username')
+    readonly_fields = ('user',)
+    list_select_related = ('user', 'classroom')
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
 
 
 class GateSequenceField(forms.Field):

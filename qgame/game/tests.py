@@ -5,7 +5,7 @@ from django.core.management import call_command
 from django.test import TestCase, Client, SimpleTestCase, override_settings
 
 from .game_logic import QuantumGame
-from .models import GameLevel
+from .models import GameLevel, Classroom, UserProfile
 
 
 class QuantumRulesTests(SimpleTestCase):
@@ -163,13 +163,64 @@ class AuthenticationTests(TestCase):
 
     def test_signup_validates_password_and_never_grants_staff(self):
         csrf = self.client.get('/api/session/').json()['csrfToken']
-        data = {'username': 'new-player', 'password': '123', 'is_staff': True}
+        data = {'username': 'new-player', 'password': '123', 'is_staff': True, 'student_id': '001234'}
         response = self.client.post('/api/signup/', data, content_type='application/json', HTTP_X_CSRFTOKEN=csrf)
         self.assertEqual(response.status_code, 400)
         data['password'] = 'A-secure-test-password-98'
         response = self.client.post('/api/signup/', data, content_type='application/json', HTTP_X_CSRFTOKEN=csrf)
         self.assertEqual(response.status_code, 201)
         self.assertFalse(User.objects.get(username='new-player').is_staff)
+        self.assertEqual(User.objects.get(username='new-player').student_profile.student_id, '001234')
+
+    def test_classroom_signup_duplicate_student_ids_and_bad_classroom(self):
+        classroom = Classroom.objects.create(name='Class A')
+        csrf = self.client.get('/api/session/').json()['csrfToken']
+        self.assertEqual(self.client.get('/api/classrooms/').json(), [{'id': classroom.id, 'name': 'Class A'}])
+        data = {'username': 'student-a', 'password': 'A-secure-test-password-98', 'student_id': '00007', 'classroom_id': classroom.id}
+        response = self.client.post('/api/signup/', data, content_type='application/json', HTTP_X_CSRFTOKEN=csrf)
+        self.assertEqual(response.status_code, 201)
+        profile = User.objects.get(username='student-a').student_profile
+        self.assertEqual(profile.student_id, '00007')
+        self.assertEqual(profile.classroom_id, classroom.id)
+        data['username'] = 'student-b'
+        self.assertEqual(self.client.post('/api/signup/', data, content_type='application/json', HTTP_X_CSRFTOKEN=csrf).status_code, 400)
+        self.assertFalse(User.objects.filter(username='student-b').exists())
+        data['student_id'] = '00008'
+        data['classroom_id'] = 9999
+        self.assertEqual(self.client.post('/api/signup/', data, content_type='application/json', HTTP_X_CSRFTOKEN=csrf).status_code, 400)
+        data.pop('student_id')
+        self.assertEqual(self.client.post('/api/signup/', data, content_type='application/json', HTTP_X_CSRFTOKEN=csrf).status_code, 400)
+
+    def test_admin_and_legacy_accounts_can_leave_student_id_blank(self):
+        self.assertIsNone(User.objects.get(username='player').student_profile.student_id)
+        admin_user = User.objects.create_superuser('admin', password='A-secure-test-password-98')
+        self.assertIsNone(admin_user.student_profile.student_id)
+        classroom = Classroom.objects.create(name='Class A')
+        profile = admin_user.student_profile
+        profile.classroom = classroom
+        profile.save()
+        classroom.delete()
+        profile.refresh_from_db()
+        self.assertIsNone(profile.classroom)
+
+    @override_settings(STORAGES={
+        'default': {'BACKEND': 'django.core.files.storage.FileSystemStorage'},
+        'staticfiles': {'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage'},
+    })
+    def test_admin_edits_student_profile_and_filters_users(self):
+        owner = User.objects.create_superuser('owner', password='A-secure-test-password-98')
+        self.client.force_login(owner)
+        classroom = Classroom.objects.create(name='Class A')
+        profile = User.objects.get(username='player').student_profile
+        csrf = self.client.get('/api/session/').json()['csrfToken']
+        response = self.client.post(f'/admin/game/userprofile/{profile.id}/change/', {'student_id': '00099', 'classroom': classroom.id}, HTTP_X_CSRFTOKEN=csrf)
+        self.assertEqual(response.status_code, 302)
+        profile.refresh_from_db()
+        self.assertEqual(profile.student_id, '00099')
+        self.assertEqual(profile.classroom_id, classroom.id)
+        response = self.client.get('/admin/auth/user/', {'student_profile__classroom__id__exact': classroom.id})
+        self.assertContains(response, '00099')
+        self.assertContains(response, 'Class A')
 
     def test_bad_login_input_and_anonymous_api_access(self):
         csrf = self.client.get('/api/session/').json()['csrfToken']

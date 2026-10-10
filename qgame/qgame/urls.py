@@ -3,7 +3,7 @@ from django.urls import path, re_path
 from django.views.generic import TemplateView
 from game.views import (
     GameLevelView, StartGameView, ApplyGateView,
-    login_view, logout_view, session_view, signup_view, health_view,
+    login_view, logout_view, session_view, signup_view, health_view, classrooms_view,
 )
 
 urlpatterns = [
@@ -17,5 +17,6 @@ urlpatterns = [
     path('api/logout/', logout_view),
     path('api/session/', session_view),
     path('api/signup/', signup_view),
+    path('api/classrooms/', classrooms_view),
     re_path(r'^(?!api/|admin/|static/|healthz/).*$', TemplateView.as_view(template_name='index.html')),
 ]

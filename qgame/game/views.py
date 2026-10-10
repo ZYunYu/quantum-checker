@@ -19,6 +19,7 @@ from rest_framework.views import APIView
 from .game_logic import CIRCLE_PAULIS, QuantumGame, SUPPORTED_GATES
 from .models.game_level_model import GameLevel
 from .models.game_session_model import GameSession
+from .models.user_model import Classroom, UserProfile
 from .serializer import GameLevelSerializer
 
 
@@ -141,11 +142,14 @@ def logout_view(request):
 @never_cache
 @ensure_csrf_cookie
 def session_view(request):
+    profile = UserProfile.objects.select_related('classroom').filter(user=request.user).first() if request.user.is_authenticated else None
     return JsonResponse({
         'isauthenticated': request.user.is_authenticated,
         'userId': request.user.id if request.user.is_authenticated else None,
         'isStaff': request.user.is_staff if request.user.is_authenticated else False,
         'csrfToken': get_token(request),
+        'studentId': profile.student_id if profile else None,
+        'classroom': {'id': profile.classroom_id, 'name': profile.classroom.name} if profile and profile.classroom else None,
     })
 
 
@@ -161,17 +165,38 @@ def signup_view(request):
     if not isinstance(password, str) or not isinstance(email, str):
         return JsonResponse({'error': 'Invalid password or email.'}, status=400)
     user = User(username=username.strip(), email=email)
+    student_id = data.get('student_id')
+    if not isinstance(student_id, str) or not student_id.strip():
+        return JsonResponse({'error': 'Student ID is required.'}, status=400)
+    classroom_id = data.get('classroom_id')
+    classroom = None
+    if classroom_id is not None:
+        if type(classroom_id) is not int:
+            return JsonResponse({'error': 'Select a valid classroom.'}, status=400)
+        classroom = Classroom.objects.filter(pk=classroom_id).first()
+        if classroom is None:
+            return JsonResponse({'error': 'This classroom does not exist.'}, status=400)
+    profile = UserProfile(student_id=student_id.strip(), classroom=classroom)
     try:
         user.full_clean(exclude=['password'])
         validate_password(password, user=user)
+        profile.full_clean(exclude=['user'])
     except ValidationError as exc:
         return JsonResponse({'error': ' '.join(exc.messages)}, status=400)
     try:
-        User.objects.create_user(username=user.username, email=email, password=password)
+        with transaction.atomic():
+            created_user = User.objects.create_user(username=user.username, email=email, password=password)
+            UserProfile.objects.filter(user=created_user).update(student_id=profile.student_id, classroom=classroom)
     except IntegrityError:
-        return JsonResponse({'error': 'Username already exists.'}, status=400)
+        return JsonResponse({'error': 'Username or student ID already exists.'}, status=400)
     return JsonResponse({'detail': 'User created successfully'}, status=201)
 
 
 def health_view(request):
     return JsonResponse({'status': 'ok'})
+
+
+def classrooms_view(request):
+    if request.method != 'GET':
+        return JsonResponse({'error': 'Method not allowed.'}, status=405)
+    return JsonResponse(list(Classroom.objects.values('id', 'name')), safe=False)

@@ -55,6 +55,9 @@ WSGI_APPLICATION = 'qgame.wsgi.application'
 DATABASES = {'default': dj_database_url.config(
     default=f'sqlite:///{BASE_DIR / "db.sqlite3"}', conn_max_age=0, conn_health_checks=True,
 )}
+if DATABASES['default']['ENGINE'] == 'django.db.backends.postgresql':
+    # Neon pooled endpoints use transaction pooling, so named cursors cannot persist.
+    DATABASES['default']['DISABLE_SERVER_SIDE_CURSORS'] = True
 if not DEBUG and not os.environ.get('DATABASE_URL'):
     raise ImproperlyConfigured('Set DATABASE_URL to a persistent database in production.')
 AUTH_PASSWORD_VALIDATORS = [

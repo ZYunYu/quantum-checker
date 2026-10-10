@@ -11,6 +11,8 @@ class Command(BaseCommand):
         group, _ = Group.objects.get_or_create(name='Level editors')
         group.permissions.set(Permission.objects.filter(content_type__app_label='game', codename__in=[
             'view_gamelevel', 'add_gamelevel', 'change_gamelevel', 'delete_gamelevel', 'view_gamesession',
+            'view_classroom', 'add_classroom', 'change_classroom', 'delete_classroom',
+            'view_userprofile', 'change_userprofile',
         ]))
         username = os.environ.get('BOOTSTRAP_ADMIN_USERNAME')
         password = os.environ.get('BOOTSTRAP_ADMIN_PASSWORD')

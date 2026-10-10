@@ -5,6 +5,8 @@ export interface SessionInfo {
   userId: number | null;
   isStaff: boolean;
   csrfToken: string;
+  studentId?: string | null;
+  classroom?: {id: number; name: string} | null;
 }
 
 export async function apiRequest<T>(path: string, options: RequestInit = {}): Promise<T> {
