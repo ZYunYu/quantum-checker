@@ -19,7 +19,9 @@ const MainMenuPage: React.FC = () => {
       <MenuButton to="/level-selection">Start Game</MenuButton>
       <MenuButton to="/about">About</MenuButton>
       <MenuButton to="/how-to-play">How to Play</MenuButton>
+      <a href="/guides/user-guide.html">User guide</a>
       {isStaff && <a href="/admin/">Edit levels</a>}
+      {isStaff && <a href="/guides/admin-guide.html">Administrator guide</a>}
       {isAuthenticated ? <button onClick={logout}>Log out</button> : <MenuButton to="/login">Log in</MenuButton>}
     </div>
     {error && <p role="alert">{error}</p>}

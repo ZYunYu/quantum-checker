@@ -35,12 +35,12 @@ class StudentUserAdmin(UserAdmin):
     def get_inline_instances(self, request, obj=None):
         return super().get_inline_instances(request, obj) if obj else []
 
-    @admin.display(description='学号')
+    @admin.display(description='Student ID')
     def student_id(self, obj):
         profile = getattr(obj, 'student_profile', None)
         return profile.student_id if profile else None
 
-    @admin.display(description='班级')
+    @admin.display(description='Classroom')
     def classroom(self, obj):
         profile = getattr(obj, 'student_profile', None)
         return profile.classroom if profile else None
@@ -80,7 +80,7 @@ class GateSequenceField(forms.Field):
                 continue
             parts = token.split(':')
             if len(parts) != 2 or parts[1] not in ('0', '1'):
-                raise forms.ValidationError('格式示例：h:0, x:1, cz。0 为左量子比特，1 为右量子比特。')
+                raise forms.ValidationError('Example: h:0, x:1, cz. Use 0 for the left qubit and 1 for the right qubit.')
             operations.append({'gate': parts[0], 'qubit_idx': int(parts[1])})
         try:
             validate_gates(operations)
@@ -91,8 +91,8 @@ class GateSequenceField(forms.Field):
 
 class GameLevelForm(forms.ModelForm):
     initial_gates = GateSequenceField(
-        required=False, label='初始状态',
-        help_text='从 |00〉开始执行。留空表示 |00〉；例如 h:0, x:1, cz。',
+        required=False, label='Initial state',
+        help_text='Operations run from |00〉. Leave blank to start at |00〉. Example: h:0, x:1, cz.',
     )
 
     class Meta:
@@ -103,7 +103,7 @@ class GameLevelForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         for field in CIRCLE_PAULIS:
-            self.fields[field].help_text = '目标：1 黑色，0 白色，0.5 空心。留空表示不要求匹配。'
+            self.fields[field].help_text = 'Target: 1 = black, 0 = white, 0.5 = outline. Leave blank to accept any value.'
             self.fields[field].widget.attrs.update({'step': '0.5', 'min': '0', 'max': '1'})
 
 
@@ -113,14 +113,14 @@ class GameLevelAdmin(admin.ModelAdmin):
     list_display = ('level', 'title', 'display_gates')
     search_fields = ('title', 'instructions')
     fieldsets = (
-        ('关卡信息', {'fields': ('level', 'title', 'instructions')}),
-        ('初始状态和允许使用的门', {'fields': ('initial_gates', ('gate_x', 'gate_z', 'gate_h', 'gate_cz'))}),
-        ('目标圆点', {'fields': (
+        ('Level information', {'fields': ('level', 'title', 'instructions')}),
+        ('Initial state and allowed gates', {'fields': ('initial_gates', ('gate_x', 'gate_z', 'gate_h', 'gate_cz'))}),
+        ('Target circles', {'fields': (
             ('circle11', 'circle12'), ('circle23', 'circle33'),
             ('circle31', 'circle21', 'circle22', 'circle32'),
-        ), 'description': '保存时自动检查目标是否可达。玩家必须让当前棋盘匹配目标。'}),
-        ('高级过关条件（可选）', {'fields': ('win_conditions',), 'classes': ('collapse',),
-         'description': '通常保留 []。范围示例：[{"row":1,"column":1,"min":0.8,"max":1}]'}),
+        ), 'description': 'Players must match the target. Saving checks that it is reachable with the allowed gates.'}),
+        ('Advanced win conditions (optional)', {'fields': ('win_conditions',), 'classes': ('collapse',),
+         'description': 'Usually leave this as []. Range example: [{"row":1,"column":1,"min":0.8,"max":1}]'}),
     )
 
     @admin.display(description='Allowed gates')
@@ -141,3 +141,4 @@ class GameSessionAdmin(admin.ModelAdmin):
 admin.site.register(UserGameLevel)
 admin.site.site_header = 'Quantum Checkers Admin'
 admin.site.site_title = 'Quantum Checkers'
+admin.site.index_template = 'game/admin_index.html'

@@ -76,7 +76,7 @@ class GameLevel(models.Model):
                     successor.state = list(game.state)
                     successor.apply_gate(bit, gate)
                     queue.append(successor.state)
-        raise ValidationError('目标状态无法通过允许的量子门达到，请检查目标圆点和允许使用的门。')
+        raise ValidationError('The target cannot be reached with the allowed gates. Check the target circles and allowed gates.')
 
     def __str__(self):
         return f"Level {self.level}" + (f" — {self.title}" if self.title else '')

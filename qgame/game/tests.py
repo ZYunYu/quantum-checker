@@ -163,33 +163,44 @@ class AuthenticationTests(TestCase):
 
     def test_signup_validates_password_and_never_grants_staff(self):
         csrf = self.client.get('/api/session/').json()['csrfToken']
-        data = {'username': 'new-player', 'password': '123', 'is_staff': True, 'student_id': '001234'}
+        data = {'username': 'new-player', 'password': '123', 'is_staff': True, 'student_id': 'D001234'}
         response = self.client.post('/api/signup/', data, content_type='application/json', HTTP_X_CSRFTOKEN=csrf)
         self.assertEqual(response.status_code, 400)
         data['password'] = 'A-secure-test-password-98'
         response = self.client.post('/api/signup/', data, content_type='application/json', HTTP_X_CSRFTOKEN=csrf)
         self.assertEqual(response.status_code, 201)
         self.assertFalse(User.objects.get(username='new-player').is_staff)
-        self.assertEqual(User.objects.get(username='new-player').student_profile.student_id, '001234')
+        self.assertEqual(User.objects.get(username='new-player').student_profile.student_id, 'D001234')
 
     def test_classroom_signup_duplicate_student_ids_and_bad_classroom(self):
         classroom = Classroom.objects.create(name='Class A')
         csrf = self.client.get('/api/session/').json()['csrfToken']
         self.assertEqual(self.client.get('/api/classrooms/').json(), [{'id': classroom.id, 'name': 'Class A'}])
-        data = {'username': 'student-a', 'password': 'A-secure-test-password-98', 'student_id': '00007', 'classroom_id': classroom.id}
+        data = {'username': 'student-a', 'password': 'A-secure-test-password-98', 'student_id': 'D00007', 'classroom_id': classroom.id}
         response = self.client.post('/api/signup/', data, content_type='application/json', HTTP_X_CSRFTOKEN=csrf)
         self.assertEqual(response.status_code, 201)
         profile = User.objects.get(username='student-a').student_profile
-        self.assertEqual(profile.student_id, '00007')
+        self.assertEqual(profile.student_id, 'D00007')
         self.assertEqual(profile.classroom_id, classroom.id)
         data['username'] = 'student-b'
         self.assertEqual(self.client.post('/api/signup/', data, content_type='application/json', HTTP_X_CSRFTOKEN=csrf).status_code, 400)
         self.assertFalse(User.objects.filter(username='student-b').exists())
-        data['student_id'] = '00008'
+        data['student_id'] = 'D00008'
         data['classroom_id'] = 9999
         self.assertEqual(self.client.post('/api/signup/', data, content_type='application/json', HTTP_X_CSRFTOKEN=csrf).status_code, 400)
         data.pop('student_id')
         self.assertEqual(self.client.post('/api/signup/', data, content_type='application/json', HTTP_X_CSRFTOKEN=csrf).status_code, 400)
+
+    def test_signup_rejects_invalid_student_id_formats(self):
+        csrf = self.client.get('/api/session/').json()['csrfToken']
+        data = {'username': 'invalid-student', 'password': 'A-secure-test-password-98'}
+        for student_id in ('123456', 'd123456', 'D', 'D12A', 'D12_3', 'D12-3', 'D12 3', 'D１２３', 'D١٢٣', 'D1\n2'):
+            with self.subTest(student_id=student_id):
+                data['student_id'] = student_id
+                response = self.client.post('/api/signup/', data, content_type='application/json', HTTP_X_CSRFTOKEN=csrf)
+                self.assertEqual(response.status_code, 400)
+                self.assertIn('uppercase D followed by digits only', response.json()['error'])
+                self.assertFalse(User.objects.filter(username=data['username']).exists())
 
     def test_admin_and_legacy_accounts_can_leave_student_id_blank(self):
         self.assertIsNone(User.objects.get(username='player').student_profile.student_id)
@@ -213,14 +224,24 @@ class AuthenticationTests(TestCase):
         classroom = Classroom.objects.create(name='Class A')
         profile = User.objects.get(username='player').student_profile
         csrf = self.client.get('/api/session/').json()['csrfToken']
-        response = self.client.post(f'/admin/game/userprofile/{profile.id}/change/', {'student_id': '00099', 'classroom': classroom.id}, HTTP_X_CSRFTOKEN=csrf)
+        response = self.client.post(f'/admin/game/userprofile/{profile.id}/change/', {'student_id': 'D00099', 'classroom': classroom.id}, HTTP_X_CSRFTOKEN=csrf)
         self.assertEqual(response.status_code, 302)
         profile.refresh_from_db()
-        self.assertEqual(profile.student_id, '00099')
+        self.assertEqual(profile.student_id, 'D00099')
         self.assertEqual(profile.classroom_id, classroom.id)
         response = self.client.get('/admin/auth/user/', {'student_profile__classroom__id__exact': classroom.id})
-        self.assertContains(response, '00099')
+        self.assertContains(response, 'D00099')
         self.assertContains(response, 'Class A')
+        response = self.client.post(f'/admin/game/userprofile/{profile.id}/change/', {'student_id': 'd00099', 'classroom': classroom.id}, HTTP_X_CSRFTOKEN=csrf)
+        self.assertContains(response, 'uppercase D followed by digits only')
+        profile.refresh_from_db()
+        self.assertEqual(profile.student_id, 'D00099')
+        response = self.client.get('/admin/')
+        self.assertContains(response, 'Student profiles')
+        self.assertContains(response, 'Classrooms')
+        self.assertContains(response, '/guides/admin-guide.html')
+        self.assertNotContains(response, '学生资料')
+        self.assertNotContains(response, '班级')
 
     def test_bad_login_input_and_anonymous_api_access(self):
         csrf = self.client.get('/api/session/').json()['csrfToken']
