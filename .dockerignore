@@ -1,0 +1,11 @@
+.git
+.venv
+.deployment
+.env
+.env.*
+**/__pycache__
+**/node_modules
+**/build
+qgame/db.sqlite3
+qgame/staticfiles
+*.docx

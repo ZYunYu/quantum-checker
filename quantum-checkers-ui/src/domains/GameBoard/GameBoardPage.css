@@ -1,26 +1,9 @@
-.game-board-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    background-color: var(--color-background);
-}
-
-
-
-.game-board {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    grid-template-rows: repeat(3, 1fr);
-    gap: 10px;
-    width: 80vw;
-    height: 80vw;
-    max-width: 500px;
-    max-height: 500px;
-    min-width: 300px;
-    min-height: 300px;
-    margin: auto;
-    transform: rotate(45deg);
-    transform-origin: center;
-    position: relative;
-}
+.game-board-container {padding: 24px 16px 70px; min-height: 100vh; box-sizing: border-box; background: var(--color-background); color: var(--color-text);}
+.boards {display: flex; flex-wrap: wrap; gap: 30px; justify-content: center;}
+.boards section {min-width: 250px;}
+.board-wrap {width: min(70vw, 320px); height: min(70vw, 320px); padding: 55px; margin: auto; box-sizing: content-box;}
+.game-board {display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); gap: 8px; width: 100%; height: 100%; transform: rotate(45deg);}
+.gate-controls {display: flex; gap: 10px; justify-content: center; margin: 16px;}
+.game-board-container fieldset {display: inline-flex; gap: 20px; border: 1px solid var(--color-border);}
+.win-message {font-weight: bold; font-size: 1.2rem;}
+@media (max-width: 480px) {.board-wrap {width: 190px; height: 190px; padding: 42px;}.boards {gap: 8px;}}

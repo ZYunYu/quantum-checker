@@ -1,4 +1,4 @@
-qgame/game/migrations/
+# Database migrations are source code and must be committed.
 
 quantum-checkers-ui/node_modules/
 quantum-checkers-ui/build/
@@ -82,5 +82,12 @@ Temporary Items
 
 
 /qgame/game/static/game/*
+
+.venv/
+.env
+.env.*
+!.env.example
+qgame/staticfiles/
+.deployment/
 
 

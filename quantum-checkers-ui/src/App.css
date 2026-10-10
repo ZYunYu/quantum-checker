@@ -1,6 +1,15 @@
 .App {
   text-align: center;
+  min-height: 100vh;
+  color: var(--color-text);
+  background: var(--color-background);
 }
+
+.session-display {position: fixed; right: 12px; bottom: 8px; padding: 8px; background: var(--color-background); z-index: 10;}
+.auth-container {max-width: 420px; margin: auto; padding: 32px;}
+.auth-container label {display: block; margin-bottom: 8px;}
+.auth-container input {padding: 10px; width: 100%; box-sizing: border-box;}
+a {color: inherit;}
 
 .App-logo {
   height: 40vmin;

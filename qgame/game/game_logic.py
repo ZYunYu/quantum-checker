@@ -1,104 +1,85 @@
-import copy
-import json
-from io import BytesIO
+"""Exact two-qubit simulation.
 
-import numpy as np
-from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
-from qiskit_aer.backends.aer_simulator import AerSimulator
+Bit 0 is the left qubit. Pauli strings use q1-q0 ordering.
+Circles show P(0) or P(equal): 1 black, 0 white, 0.5 outline.
+"""
+import math
 
-SUPPORTED_GATES = ['x', 'z', 'h', 'cz']
+SUPPORTED_GATES = ('x', 'z', 'h', 'cz')
+CIRCLE_PAULIS = {
+    'circle11': 'IZ', 'circle12': 'IX', 'circle23': 'XI', 'circle33': 'ZI',
+    'circle31': 'ZZ', 'circle21': 'ZX', 'circle22': 'XX', 'circle32': 'XZ',
+}
 
 
-class QuantumGame():
-    def __init__(self,
-                 initialize: list[dict] = [],
-                 win_condition: dict = None,
-                 allowed_gates: list[str] = None,
-                 shots: int = 1024,
-                 win_threshold: float = 0.1,
-                 backend=None):
+def validate_gates(gates):
+    if not isinstance(gates, list) or len(gates) > 256:
+        raise ValueError('Initial gates must be a list of at most 256 operations.')
+    for item in gates:
+        if not isinstance(item, dict) or item.get('gate') not in SUPPORTED_GATES:
+            raise ValueError('Supported gates are x, z, h and cz.')
+        if item['gate'] != 'cz' and (type(item.get('qubit_idx')) is not int or item['qubit_idx'] not in (0, 1)):
+            raise ValueError('X, Z and H need qubit_idx 0 or 1.')
 
-        self.circuit = self.create_circuit()
 
-        self.allowed_gates = allowed_gates if allowed_gates is not None else ['x', 'z', 'h', 'cz', 'cx']
-        self.applied_gates = initialize
-        self.win_condition = win_condition if win_condition is not None else {'IZ': 0, 'ZI': 0, 'IX': 0, 'XI': 0,
-                                                                              'ZZ': 0, 'ZX': 0, 'XZ': 0, 'XX': 0}
-        self.win_threshold = win_threshold
+class QuantumGame:
+    def __init__(self, initialize=None, allowed_gates=None):
+        self.allowed_gates = list(SUPPORTED_GATES) if allowed_gates is None else allowed_gates
+        self.state = [1.0, 0.0, 0.0, 0.0]
+        self.applied_gates = []
+        gates = initialize or []
+        validate_gates(gates)
+        for operation in gates:
+            self._apply(operation['gate'], operation.get('qubit_idx', 0))
 
-        self.backend = AerSimulator() if backend is None else backend
-        self.shots = shots
-
-        self.probabilities = None
-
-        for gate_dict in initialize:
-            self.apply_gate(**gate_dict)
-
-    def create_circuit(self):
-        qr = QuantumRegister(2, 'q')
-        cr = ClassicalRegister(2, 'c')
-        circuit = QuantumCircuit(qr, cr)
-        return circuit
-
-    def apply_gate(self, qubit_idx: int, gate: str, **params):
-        gate = gate.lower()
-        assert gate in self.allowed_gates, f"Gate {gate} not supported"
-        getattr(self.circuit, gate)(qubit_idx)
-        self.applied_gates.append({'qubit_idx': qubit_idx, 'gate': gate, **params})
-
-    def run_circuit(self, **kwargs) -> None:
-        self.probabilities = {}
-
-        corr = ['ZZ', 'ZX', 'XZ', 'XX']
-        identities = ['ZI', 'XI', 'IZ', 'IX']
-
-        results = {}
-        for basis in corr:
-            temp_circuit = copy.deepcopy(self.circuit)
-            for i in range(2):
-                if basis[i] == 'X':
-                    temp_circuit.h(i)
-
-            temp_circuit.barrier()
-            temp_circuit.measure(self.qr, self.cr)
-
-            job = self.backend.run(temp_circuit, shots=self.shots, **kwargs)
-            results[basis] = job.result().get_counts()
-
-            for key, value in results[basis].items():
-                results[basis][key] = value / self.shots
-
-        probabilities = {}
-        for identity in identities:
-            probabilities[identity] = 0
-            for basis, counts in results.items():
-                if basis[(identity.index('I') + 1) % 2] != identity[(identity.index('I') + 1) % 2]:
+    def _apply(self, gate, qubit_idx):
+        if gate == 'cz':
+            self.state[3] *= -1
+        else:
+            mask = 1 << qubit_idx
+            for index in range(4):
+                if index & mask:
                     continue
-                for string, count in counts.items():
-                    if string[identity.index('I')] == '1':
-                        probabilities[identity] += count / 2
+                other = index | mask
+                a, b = self.state[index], self.state[other]
+                if gate == 'x':
+                    self.state[index], self.state[other] = b, a
+                elif gate == 'z':
+                    self.state[other] = -b
+                elif gate == 'h':
+                    self.state[index], self.state[other] = (a + b) / math.sqrt(2), (a - b) / math.sqrt(2)
+        self.applied_gates.append({'gate': gate, **({'qubit_idx': qubit_idx} if gate != 'cz' else {})})
 
-        for basis in corr:
-            probabilities[basis] = 0
-            for string, probability in results[basis].items():
-                if string[0] != string[1]:
-                    probabilities[basis] += probability
+    def apply_gate(self, qubit_idx, gate):
+        if gate not in self.allowed_gates:
+            raise ValueError('This gate is not allowed in this level.')
+        validate_gates([{'gate': gate, 'qubit_idx': qubit_idx}])
+        self._apply(gate, qubit_idx)
 
-        for basis, probability in probabilities.items():
-            self.probabilities[basis] = 1 - 2 * probability
+    def run_circuit(self):
+        self.probabilities = {}
+        for field, pauli in CIRCLE_PAULIS.items():
+            expectation = 0.0
+            for index, amplitude in enumerate(self.state):
+                other, sign = index, 1
+                for bit, operator in enumerate(reversed(pauli)):
+                    if operator == 'X':
+                        other ^= 1 << bit
+                    elif operator == 'Z' and index & (1 << bit):
+                        sign *= -1
+                expectation += self.state[other] * amplitude * sign
+            self.probabilities[field] = round(max(0, min(1, (1 + expectation) / 2)), 10)
+        return self.probabilities
 
-    def check_win(self) -> bool:
-        if self.probabilities is None:
-            self.run_circuit()
-
-        for pauli, prob in self.probabilities.items():
-            if self.win_condition[pauli] == None:
-                continue
-            win_proximity = abs(prob - self.win_condition[pauli])
-            if win_proximity > self.win_threshold:
+    def check_win(self, level):
+        circles = self.run_circuit()
+        targets = {field: getattr(level, field) for field in CIRCLE_PAULIS if getattr(level, field) is not None}
+        for condition in level.win_conditions:
+            field = f"circle{condition['row']}{condition['column']}"
+            value = circles[field]
+            if 'exact' in condition:
+                if abs(value - condition['exact']) > 1e-6:
+                    return False
+            elif not condition['min'] - 1e-6 <= value <= condition['max'] + 1e-6:
                 return False
-
-    def save(self, filename: str):
-        with open(filename, 'w+') as f:
-            json.dump(self.applied_gates, f)
-
+        return bool(targets or level.win_conditions) and all(abs(circles[field] - target) <= 1e-6 for field, target in targets.items())

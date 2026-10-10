@@ -1,80 +1,39 @@
 import React, {useState} from 'react';
-import {useNavigate} from 'react-router-dom';
+import {useNavigate, Link} from 'react-router-dom';
 import {useAuth} from './AuthContext';
-import Cookies from 'universal-cookie';
+import {apiRequest} from '../../../shared/api';
+import './AuthForm.css';
 
 const Login: React.FC = () => {
-    const [username, setUsername] = useState('');
-    const [password, setPassword] = useState('');
-    const [error, setError] = useState('');
-    const cookies = new Cookies();
-    const navigate = useNavigate();
-    const {setIsAuthenticated} = useAuth();
-
-    const handleLogin = async (event: React.FormEvent<HTMLFormElement>) => {
-        event.preventDefault();
-
-        const csrfToken = cookies.get('csrftoken');
-
-        try {
-            const response = await fetch('http://localhost:8000/api/login/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': csrfToken || '',
-                },
-                credentials: 'include',
-                body: JSON.stringify({username, password}),
-            });
-
-            if (!response.ok) {
-                // If the response status code is not 2xx, the login failed
-                const errorData = await response.json();
-                const errorMessage = errorData.error || 'Login failed. Please try again.';
-                setError(errorMessage);
-                return;
-            }
-
-            const responseData = await response.json();
-            setIsAuthenticated(true);
-            navigate('/test');
-        } catch (error) {
-            console.error('Login error:', error);
-            setError('An error occurred. Please try again.');
-        }
-    };
-
-
-    return (
-        <div>
-            <h2>Login</h2>
-            {error && <div className="error">{error}</div>}
-            <form onSubmit={handleLogin}>
-                <div>
-                    <label htmlFor="username">Username:</label>
-                    <input
-                        type="text"
-                        id="username"
-                        value={username}
-                        onChange={(e) => setUsername(e.target.value)}
-                        required
-                    />
-                </div>
-                <div>
-                    <label htmlFor="password">Password:</label>
-                    <input
-                        type="password"
-                        id="password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                    />
-                </div>
-                <button type="submit">Login</button>
-                <button type="button" onClick={() => navigate('/signup')}>Sign Up</button>
-            </form>
-        </div>
-    );
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+  const navigate = useNavigate();
+  const {refreshSession} = useAuth();
+  const handleLogin = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setBusy(true);
+    setError('');
+    try {
+      await apiRequest('/api/login/', {method: 'POST', body: JSON.stringify({username, password})});
+      await refreshSession();
+      navigate('/');
+    } catch (error) {
+      setError((error as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+  return <main className="auth-container">
+    <h1>Log in</h1>
+    {error && <p role="alert">{error}</p>}
+    <form onSubmit={handleLogin}>
+      <p><label htmlFor="username">Username</label><input id="username" autoComplete="username" value={username} onChange={e => setUsername(e.target.value)} required /></p>
+      <p><label htmlFor="password">Password</label><input id="password" type="password" autoComplete="current-password" value={password} onChange={e => setPassword(e.target.value)} required /></p>
+      <button disabled={busy}>{busy ? 'Logging in…' : 'Log in'}</button>
+    </form>
+    <p><Link to="/signup">Create an account</Link></p>
+  </main>;
 };
-
 export default Login;
